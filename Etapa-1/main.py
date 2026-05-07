@@ -1,31 +1,45 @@
 import random
 import matplotlib.pyplot as plt
+
 class Ruleta: 
+
   #Numeros de la ruleta como atributo de clase
   NUMEROS = list(range(37))
   NUM_ESPERADO = 7
+
   def __init__(self):
     pass
 
   def girar(self):
+
     #Selecciona un numero al azar de la ruleta
     numero = random.randint(0, 36)
     if numero == self.NUM_ESPERADO:
       return True
     else:
       return False
+    
 class Resultado:
   def __init__(self,aciertos,tiradas):
     self.fAbsoulta = aciertos
     self.fRelativa = aciertos / tiradas
+    self.promedio = (0+36) / 2
+    self.varianza = ((36-0+1)**2 - 1) / 12
+    self.desvio = self.varianza ** 0.5
+
   def __str__(self):
     return f"Aciertos Absolutos: {self.fAbsoulta}, Aciertos Relativos: {self.fRelativa:.2f}"
+  
+
 class SIMULACION:
+
   TIRADAS = 100
   CORRIDAS = 1500
+
   def __init__(self):
     self.ruleta = Ruleta()
     self.resultados = []
+
   def ejecutar(self):
     for _ in range(self.CORRIDAS):
       aciertos = 0
@@ -35,6 +49,7 @@ class SIMULACION:
       resultado = Resultado(aciertos,self.TIRADAS)
       self.resultados.append(resultado)
     return self.resultados
+  
   def grafico_frecuencia_relativa(self):
 
       frecuencias_rel = [resultado.fRelativa for resultado in self.resultados]
@@ -56,7 +71,7 @@ class SIMULACION:
       plt.show()
 
 
-  def grafico_promedio_corrida(self):
+  """def grafico_promedio_corrida(self):
       # Obtener la frecuencia absoluta de cada corrida
       frecuencias_abs = [resultado.fAbsoulta for resultado in self.resultados]
 
@@ -86,7 +101,7 @@ class SIMULACION:
       plt.title('Promedio Acumulado de Aciertos por Corrida')
       plt.grid(alpha=0.3)
       plt.legend()
-      plt.show()
+      plt.show()"""
 
   def mostrar_resultados(self):
     """ Graficos mínimos
