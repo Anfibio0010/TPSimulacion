@@ -1,16 +1,19 @@
 import random
 import matplotlib.pyplot as plt
+import argparse
 
 class Ruleta:
 
   NUMEROS = list(range(37))
-  NUM_ESPERADO = 7
   PROMEDIO = (0 + 36) / 2
   VARIANZA = ((36 - 0 + 1) ** 2 - 1) / 12
   DESVIO = VARIANZA ** 0.5
 
-  def __init__(self):
-    pass
+  def __init__(self, num_esperado=7):
+      if num_esperado not in self.NUMEROS:
+          raise ValueError("El numero elegido debe estar entre 0 y 36.")
+      self.num_esperado = num_esperado
+
 
   def girar(self):
     return random.randint(0, 36)
@@ -26,13 +29,14 @@ class Resultado:
 
 class SIMULACION:
 
-  TIRADAS = 1500
-  CORRIDAS = 100
-
-  def __init__(self):
-    self.ruleta = Ruleta()
-    self.resultados = []
-    self.numeros = []
+  def __init__(self, tiradas=1500, corridas=100, num_esperado=7):
+      if tiradas <= 0 or corridas <= 0:
+          raise ValueError("Tiradas y corridas deben ser mayores a 0.")
+      self.TIRADAS = tiradas
+      self.CORRIDAS = corridas
+      self.ruleta = Ruleta(num_esperado=num_esperado)
+      self.resultados = []
+      self.numeros = []
 
   def ejecutar(self):
     for _ in range(self.CORRIDAS):
@@ -41,7 +45,7 @@ class SIMULACION:
       for _ in range(self.TIRADAS):
         numero = self.ruleta.girar()
         numeros_corrida.append(numero)
-        if numero == Ruleta.NUM_ESPERADO:
+        if numero == self.ruleta.num_esperado:
           aciertos += 1
       resultado = Resultado(aciertos, self.TIRADAS)
       self.resultados.append(resultado)
@@ -57,7 +61,7 @@ class SIMULACION:
     frn_acum = []
     for t in range(self.TIRADAS):
         for i, corrida in enumerate(self.numeros):
-            if corrida[t] == Ruleta.NUM_ESPERADO:
+            if corrida[t] == self.ruleta.num_esperado:
                 aciertos_por_corrida[i] += 1
         fr_t = sum(a / (t + 1) for a in aciertos_por_corrida) / self.CORRIDAS
         frn_acum.append(fr_t)
@@ -67,7 +71,7 @@ class SIMULACION:
         _, ax = plt.subplots(figsize=(12, 6))
 
     ax.plot(tiradas_eje, frn_acum, color='red', linewidth=1.5,
-            label=f'frn (frecuencia relativa acumulada de {Ruleta.NUM_ESPERADO})')
+            label=f'frn (frecuencia relativa acumulada de {self.ruleta.num_esperado})')
     ax.axhline(y=fre, color='blue', linewidth=2, label=f'fre: {fre:.4f} (1/37)')
     ax.set_xlim(1, self.TIRADAS)
     ax.set_xlabel('n (número de tiradas)')
@@ -187,7 +191,7 @@ class SIMULACION:
           frn = []
           aciertos = 0
           for i, numero in enumerate(corrida):
-              if numero == Ruleta.NUM_ESPERADO:
+              if numero == self.ruleta.num_esperado:
                   aciertos += 1
               frn.append(aciertos / (i + 1))
           ax.plot(tiradas, frn, linewidth=0.5, alpha=0.4)
@@ -296,7 +300,7 @@ class SIMULACION:
       todos_los_numeros = [n for corrida in self.numeros for n in corrida]
       total = len(todos_los_numeros)
 
-      fr_simulada = sum(1 for n in todos_los_numeros if n == Ruleta.NUM_ESPERADO) / total
+      fr_simulada = sum(1 for n in todos_los_numeros if n == self.ruleta.num_esperado) / total
       promedio_simulado = sum(todos_los_numeros) / total
       varianza_simulada = sum((n - promedio_simulado) ** 2 for n in todos_los_numeros) / total
       desvio_simulado = varianza_simulada ** 0.5
@@ -330,9 +334,21 @@ class SIMULACION:
       plt.tight_layout()
       plt.show()
 
+  def parse_args():
+      parser = argparse.ArgumentParser(
+          description="Simulacion de ruleta europea"
+      )
+      parser.add_argument("-c", "--corridas", type=int, default=100,
+                          help="Cantidad de corridas")
+      parser.add_argument("-n", "--tiradas", type=int, default=1500,
+                          help="Cantidad de tiradas por corrida")
+      parser.add_argument("-e", "--elegido", type=int, default=7,
+                          help="Numero elegido (0 a 36)")
+      return parser.parse_args()
 
 if __name__ == "__main__":
-  simulacion = SIMULACION()
-  resultados = simulacion.ejecutar()
+  args = SIMULACION.parse_args()
+  simulacion = SIMULACION(corridas=args.corridas, tiradas=args.tiradas, num_esperado=args.elegido)
+  simulacion.ejecutar()
   simulacion.mostrar_estadisticos()
   simulacion.mostrar_resultados()
