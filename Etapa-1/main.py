@@ -153,6 +153,7 @@ class SIMULACION:
       suma_sq_por_corrida = [0.0] * self.CORRIDAS
       vvn_acum = []
       for t in range(self.TIRADAS):
+          # enumerate nos da el indice 'i' (0,1,2..) y el iterado 'corrida' (array de tiradas)
           for i, corrida in enumerate(self.numeros):
               suma_por_corrida[i] += corrida[t]
               suma_sq_por_corrida[i] += corrida[t] ** 2
@@ -163,8 +164,11 @@ class SIMULACION:
               varianzas.append(var)
           vvn_acum.append(sum(varianzas) / self.CORRIDAS)
 
+      # Si se pasa un 'ax' desde afuera, no es standalone. Caso contrario lo es y hay que crear un gràfico propio (figura propia).
       standalone = ax is None
       if standalone:
+          # Linea 168: plt.subplots devuelve (Figura, Axes).
+          # Usamos '_' porque la variable Figura no la necesitamos acá (porque no configuramos nada de ella). 'ax' es el lienzo donde dibujaremos (y el que imprime).
           _, ax = plt.subplots(figsize=(12, 6))
 
       ax.plot(tiradas_eje, vvn_acum, color='red', linewidth=1.5, label='vvn (varianza acumulada)')
@@ -318,6 +322,10 @@ class SIMULACION:
       print(f"Varianza simulada:              {varianza_simulada:.4f}")
 
   def mostrar_resultados(self):
+      # plt.subplots genera la figura principal (fig) general de matplotlib 
+      # y los 'axes' (una matriz 2x4 en este caso) donde van los subgraficos especificos.
+      # Devuelve fig = ventana general, axes = array de subgraficos (de 2 filas, 4 columnas). 
+      # axes [1,3] = ventana fila 2, columna 4.  Recordemos que el indice empieza en 0, por eso es [1,3] y no [2,4].
       fig, axes = plt.subplots(2, 4, figsize=(24, 10))
       fig.suptitle('Simulación Ruleta Europea', fontsize=14)
 
@@ -335,17 +343,24 @@ class SIMULACION:
       plt.show()
 
   def parse_args():
-      parser = argparse.ArgumentParser(
-          description="Simulacion de ruleta europea"
-      )
-      parser.add_argument("-c", "--corridas", type=int, default=100,
-                          help="Cantidad de corridas")
-      parser.add_argument("-n", "--tiradas", type=int, default=1500,
-                          help="Cantidad de tiradas por corrida")
-      parser.add_argument("-e", "--elegido", type=int, default=7,
-                          help="Numero elegido (0 a 36)")
-      return parser.parse_args()
+          # Un parser procesa los argumentos que se le pasan por consola al script, 
+          # validando tipos (ej: int) y generando un objeto con esos valores.
+          parser = argparse.ArgumentParser(
+              description="Simulacion de ruleta europea"
+          )
+          # Cada add_argument define una opcion esperada en consola.
+          # -c / --corridas: nombre corto y largo de la bandera.
+          # type=int: trata de convertir el texto de la consola a entero.
+          # default=100: si no se pasa, asume este valor.
+          parser.add_argument("-c", "--corridas", type=int, default=100,
+                              help="Cantidad de corridas")
+          parser.add_argument("-n", "--tiradas", type=int, default=1500,
+                              help="Cantidad de tiradas por corrida")
+          parser.add_argument("-e", "--elegido", type=int, default=7,
+                              help="Numero elegido (0 a 36)")
+          return parser.parse_args()
 
+# Forma de correr el script:   python Etapa-1/main.py -c 20 -n 100 -e 14
 if __name__ == "__main__":
   args = SIMULACION.parse_args()
   simulacion = SIMULACION(corridas=args.corridas, tiradas=args.tiradas, num_esperado=args.elegido)
