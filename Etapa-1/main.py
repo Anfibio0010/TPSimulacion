@@ -201,6 +201,7 @@ class SIMULACION:
           ax.plot(tiradas, frn, linewidth=0.5, alpha=0.4)
 
       ax.axhline(y=fre, color='black', linestyle='--', linewidth=1.5, label=f'fre: {fre:.4f} (1/37)')
+      ax.set_ylim(-0.1, 0.4)
       ax.set_xlim(1, self.TIRADAS)
       ax.set_xlabel('Tirada')
       ax.set_ylabel('Frecuencia Relativa')
