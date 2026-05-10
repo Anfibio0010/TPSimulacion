@@ -5,7 +5,7 @@ Compara 4 estrategias de apuesta: Martingala, D'Alembert, Fibonacci, Paroli.
 Ejemplos de uso
 ---------------
   # Color (rojo / negro):
-  python main.py -c 10 -n 100 -e color   -v rojo  -a 100000
+  python main.py -c 10 -n 1000 -e color   -v rojo  -a 100000
 
   # Paridad (par / impar):
   python main.py -c 10 -n 100 -e paridad -v par   -a 100000
@@ -162,24 +162,20 @@ def simular(categoria, valor, num_corridas, num_tiradas, capital):
             resultado_giro = ruleta.girar()
 
             for nombre, jugador in jugadores.items():
-                res     = jugador.jugar_turno(ruleta, resultado_giro)
-                gano    = res.get("gano", False)
-                apuesta = res.get("monto_apostado", 0.0)
-                saldo   = res.get("saldo_actual", jugador.presupuesto)
+                saldo_antes = jugador.presupuesto  # ANTES de jugar
+                res         = jugador.jugar_turno(ruleta, resultado_giro)
+                gano        = res.get("gano", False)
+                apuesta     = res.get("monto_apostado", 0.0)
+                saldo       = res.get("saldo_actual", jugador.presupuesto)
 
-                # Obtener el multiplicador de pago según la categoría de apuesta
-                try:
+                # Para capital infinito saldo_antes - saldo = inf - inf = NaN
+                # entonces calculamos directo con el multiplicador de pago
+                if saldo_antes == float('inf'):
                     pago = jugador.PAGOS.get(jugador.categoria_apuesta, 2)
-                except AttributeError:
-                    pago = 2
-
-                # Si el jugador gana, el casino pierde el pago total (apuesta * (pago - 1)),
-                # si pierde, el casino gana la apuesta
-                if gano:
-                    delta_casino = -apuesta * (pago - 1)
+                    delta_casino = -apuesta * (pago - 1) if gano else apuesta
                 else:
-                    delta_casino = apuesta
-
+                    delta_casino = saldo_antes - saldo
+                    
                 records.append({
                     "corrida":       corrida,
                     "tirada":        tirada,
@@ -192,11 +188,9 @@ def simular(categoria, valor, num_corridas, num_tiradas, capital):
                 })
 
     df = pd.DataFrame(records)
-    # P&L acumulada por (estrategia, corrida) — usada en modo infinito
     df["pnl_delta"] = np.where(df["gano"], df["apuesta"], -df["apuesta"])
     df["pnl_acum"]  = df.groupby(["estrategia", "corrida"])["pnl_delta"].cumsum()
     return df
-
 
 # ── Helpers de métricas ───────────────────────────────────────────────────────
 
