@@ -1,4 +1,13 @@
 class Jugador:
+    # Tabla de pagos por categoría de apuesta
+    PAGOS = {
+        "color": 2,      # 1 a 1 (recupera lo apostado + gana lo mismo)
+        "paridad": 2,    # 1 a 1
+        "tercio": 3,     # 2 a 1 (recupera lo apostado + gana el doble)
+        "fila": 3,       # 2 a 1
+        "numero": 36     # 35 a 1 (recupera lo apostado + gana 35 veces)
+    }
+
     def __init__(self, nombre, presupuesto, categoria="color", valor="rojo"):
         self.nombre = nombre
         self.categoria_apuesta = categoria
@@ -53,9 +62,11 @@ class Jugador:
             self.categoria_apuesta, self.valor_apuesta, resultado_giro)
         self.ultimo_resultado_gano = gano
 
-        # 3. Cobrar si ganó (las suertes sencillas pagan 1 a 1: recupera la apuesta + gana el mismo monto)
+
+        # 3. Cobrar si ganó (pago según la categoría de apuesta)
         if gano:
-            self.presupuesto += (monto_real * 2)
+            pago = self.PAGOS.get(self.categoria_apuesta, 2)
+            self.presupuesto += (monto_real * pago)
 
         # 4. Ajustar la estrategia para el próximo turno
         self.actualizar_estado_estrategia()

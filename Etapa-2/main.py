@@ -167,6 +167,19 @@ def simular(categoria, valor, num_corridas, num_tiradas, capital):
                 apuesta = res.get("monto_apostado", 0.0)
                 saldo   = res.get("saldo_actual", jugador.presupuesto)
 
+                # Obtener el multiplicador de pago según la categoría de apuesta
+                try:
+                    pago = jugador.PAGOS.get(jugador.categoria_apuesta, 2)
+                except AttributeError:
+                    pago = 2
+
+                # Si el jugador gana, el casino pierde el pago total (apuesta * (pago - 1)),
+                # si pierde, el casino gana la apuesta
+                if gano:
+                    delta_casino = -apuesta * (pago - 1)
+                else:
+                    delta_casino = apuesta
+
                 records.append({
                     "corrida":       corrida,
                     "tirada":        tirada,
@@ -174,7 +187,7 @@ def simular(categoria, valor, num_corridas, num_tiradas, capital):
                     "capital":       saldo,
                     "gano":          gano,
                     "apuesta":       apuesta,
-                    "delta_casino":  apuesta if not gano else -apuesta,
+                    "delta_casino":  delta_casino,
                     "en_bancarrota": jugador.en_bancarrota,
                 })
 
