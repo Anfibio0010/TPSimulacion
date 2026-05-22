@@ -26,8 +26,8 @@ plt.rcParams.update({"font.family": "DejaVu Sans", "figure.dpi": 110})
 N        = 1000    # Numeros a generar por generador
 ALPHA    = 0.05    # Nivel de significancia
 K        = 10      # Intervalos para Chi-Cuadrado
-SEED     = 21      # Semilla global — vale cualquier entero >= 0
-SEED_VN  = 1234    # Semilla Von Neumann — debe ser exactamente 4 digitos [1000-9999]
+SEED     = 1001      # Semilla global — vale cualquier entero >= 0
+#SEED_VN  = 1234    # Semilla Von Neumann — debe ser exactamente 4 digitos [1000-9999]
 
 COLORES = {
     "GCL (ANSI C)":  "#2196F3",
@@ -497,7 +497,7 @@ def main():
 
     # ── 1. Generacion ──────────────────────────────────────────────────────
     gcl = GeneradorGCL(semilla=SEED)
-    vn  = GeneradorVonNeumann(semilla=SEED_VN)
+    vn  = GeneradorVonNeumann(semilla=SEED)
 
     print("\n[1] Generando secuencias...")
     datos = {
