@@ -156,7 +156,12 @@ venv/
 ENV/
 env.bak/
 venv.bak/
-
+*/.venv
+*/.claude
+Etapa-3/fig1_histogramas.png
+Etapa-3/fig2_coordenados.png
+Etapa-3/fig3_poker.png
+Etapa-3/fig4_tabla_resumen.png
 # Spyder project settings
 .spyderproject
 .spyproject
