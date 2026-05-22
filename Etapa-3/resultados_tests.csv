@@ -1,5 +1,0 @@
-Generador,Chi2 stat,Chi2 p-valor,Chi2 aprueba,KS stat,KS p-valor,KS aprueba,Rachas Z,Rachas p-valor,Rachas aprueba,Poker stat,Poker p-valor,Poker aprueba
-GCL (ANSI C),10.92,0.2812,True,0.0302,0.3158,True,1.3373,0.1811,True,2.7225,0.4364,True
-Von Neumann,8085.22,0.0,False,0.9455,0.0,False,-10.0069,0.0,False,1931.4716,0.0,False
-Python random,9.62,0.3821,True,0.0245,0.5784,True,-0.253,0.8003,True,4.7166,0.1938,True
-NumPy PCG64,11.62,0.2356,True,0.022,0.7104,True,3.4916,0.0005,False,10.1358,0.0174,False
