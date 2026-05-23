@@ -298,35 +298,16 @@ para las nueve distribuciones de probabilidad indicadas en la Tabla~1 del enunci
 empleando como base el Generador Congruencial Lineal (GCL) con parámetros ANSI C
 desarrollado en el trabajo anterior.
 
-\textbf{Métodos de generación.} La \textit{Transformada Inversa} se aplicó a la totalidad
-de las distribuciones: dada su generalidad, es el método fundamental de la simulación.
-El \textit{Método de Rechazo} se implementó únicamente para las distribuciones continuas
-que lo requerían —Uniforme, Exponencial y Normal— y en todos los casos se identificó
-la función envolvente apropiada y se calculó la constante de normalización $c$.
-
-\textbf{Resultados del testeo.} Se ejecutaron tests Chi-cuadrado para las seis distribuciones
-que lo exigía la cátedra, más el test Kolmogorov-Smirnov para las continuas con testeo,
-utilizando $N = 1000$ muestras, $\alpha = 0{,}05$ y tres semillas (1273, 3728, 7198).
-Los 18 ensayos requeridos aprobaron sin excepción. Los únicos rechazos aislados
-observados (Chi-cuadrado, semilla 7198 en Uniforme y Exponencial) corresponden a
-errores de tipo I inherentes al nivel de significancia elegido, fenómeno que el test
-Kolmogorov-Smirnov confirma al aprobar esas mismas muestras.
-
-\textbf{Sobre el generador base.} El GCL demostró ser un generador confiable para
+\textbf{El generador base.} El GCL demostró ser un generador confiable para
 alimentar todos los algoritmos implementados. Su costo computacional es mínimo (una
 multiplicación y un módulo por valor generado) y sus propiedades estadísticas son
 suficientes para los fines de la simulación de eventos discretos.
 
-\textbf{Relevancia del material de referencia.} Los algoritmos del Capítulo 4 de
-Naylor \cite{naylor1982}, aunque publicados en 1982, siguen siendo matemáticamente
-exactos y pedagógicamente claros. La derivación formal de la Transformada Inversa
-para cada distribución —partiendo de la CDF e igualándola a un uniforme $U$— resulta
-un ejercicio que consolida la comprensión profunda de cada modelo probabilístico.
-
-En síntesis, el trabajo cumple la totalidad de los requisitos de la cátedra: nueve
-distribuciones documentadas teórica y matemáticamente, generadores Python para las
-distribuciones indicadas, tests estadísticos aprobados y gráficas comparativas para
-cada distribución.
+\textbf{Naylor y su longevidad.} Resulta sorprendente que los algoritmos del Capítulo 4 del Naylor
+[1] , aunque fueron publicados en 1982, siguen siendo exactos matemáticamente y fáciles de
+implementar hoy en día. Gracias a esto pudimos simular todas las distribuciones solicitadas.
+Resultó una gran experiencia para el grupo y es una gran prueba de que la matemática bien
+aplicada, por más vieja que sea, siempre sirve para implementaciones de la actualidad.
 
 % ============================================================
 % REFERENCIAS
