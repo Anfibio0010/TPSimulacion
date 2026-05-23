@@ -1,0 +1,1012 @@
+% ============================================================
+% TP 2.2 — Generadores de Distribuciones de Probabilidad
+% Secciones acumulativas — agregar una distribución por bloque
+% ============================================================
+
+
+% ============================================================
+% 1. DISTRIBUCIÓN UNIFORME CONTINUA
+% ============================================================
+\subsection{Distribución Uniforme Continua}
+
+\subsubsection{Definición y parámetros}
+
+Una variable aleatoria continua $X$ sigue una distribución uniforme en el intervalo $[a, b]$
+cuando todos los valores del intervalo son igualmente probables. Se denota $X \sim \mathcal{U}(a, b)$.
+
+\begin{table}[h!]
+\centering
+\begin{tabular}{|c|l|l|}
+\hline
+\textbf{Parámetro} & \textbf{Descripción} & \textbf{Restricción} \\
+\hline
+$a$ & límite inferior & $a \in \mathbb{R}$ \\
+$b$ & límite superior & $b \in \mathbb{R},\ b > a$ \\
+\hline
+\end{tabular}
+\caption{Parámetros de la distribución $\mathcal{U}(a,b)$}
+\end{table}
+
+El caso particular $\mathcal{U}(0, 1)$ es la distribución base de la que parten todos los
+demás generadores del presente trabajo.
+
+\subsubsection{Función de Densidad de Probabilidad (PDF)}
+
+\begin{equation}
+f(x) =
+\begin{cases}
+\dfrac{1}{b - a} & \text{si } a \leq x \leq b \\[6pt]
+0 & \text{en otro caso}
+\end{cases}
+\end{equation}
+
+La función es constante: la probabilidad de caer en cualquier subintervalo de igual longitud
+dentro de $[a,b]$ es la misma.
+
+\subsubsection{Función de Distribución Acumulada (CDF)}
+
+\begin{equation}
+F(x) =
+\begin{cases}
+0 & \text{si } x < a \\[4pt]
+\dfrac{x - a}{b - a} & \text{si } a \leq x \leq b \\[6pt]
+1 & \text{si } x > b
+\end{cases}
+\end{equation}
+
+La CDF es la integral de la PDF desde $-\infty$ hasta $x$, y crece linealmente de 0 a 1
+en el intervalo $[a, b]$.
+
+\subsubsection{Momentos}
+
+\begin{equation}
+E[X] = \frac{a + b}{2} \qquad
+\text{Var}[X] = \frac{(b-a)^2}{12} \qquad
+\sigma = \frac{b - a}{\sqrt{12}}
+\end{equation}
+
+\subsubsection{Generación de muestras}
+
+\paragraph{Método de la Transformada Inversa.}
+Igualando la CDF a un valor $u \sim \mathcal{U}(0,1)$ y despejando $x$:
+
+\begin{equation}
+u = \frac{x - a}{b - a}
+\quad \Longrightarrow \quad
+\boxed{X = a + U \cdot (b - a)}
+\end{equation}
+
+\paragraph{Método de Rechazo.}
+Para $\mathcal{U}(a,b)$ la PDF es constante, por lo que la función envolvente es la propia
+$g(x) = f(x)$ con constante $c = 1$. El criterio de aceptación es:
+
+\begin{equation}
+u_2 \leq \frac{f(x)}{c \cdot g(x)} = \frac{1/(b-a)}{1/(b-a)} = 1
+\end{equation}
+
+Como el criterio siempre se cumple, todos los candidatos son aceptados. El método de rechazo
+coincide exactamente con la Transformada Inversa para esta distribución, confirmando su
+optimalidad.
+
+\subsubsection{Código Python}
+
+\begin{verbatim}
+def uniforme_inversa(a, b, n, semilla):
+    gcl = GeneradorGCL(semilla=semilla)
+    return [a + gcl.siguiente() * (b - a) for _ in range(n)]
+
+
+def uniforme_rechazo(a, b, n, semilla):
+    gcl          = GeneradorGCL(semilla=semilla)
+    gcl_criterio = GeneradorGCL(semilla=semilla + 1)
+    muestras = []
+    while len(muestras) < n:
+        x  = a + gcl.siguiente() * (b - a)
+        u2 = gcl_criterio.siguiente()
+        if u2 <= 1.0:
+            muestras.append(x)
+    return muestras
+\end{verbatim}
+
+\subsubsection{Testeo estadístico}
+
+Se generaron $N = 1000$ muestras de $\mathcal{U}(0,1)$ con ambos métodos y tres semillas
+distintas. Se aplicaron los tests Chi-cuadrado ($k = 10$ intervalos) y Kolmogorov-Smirnov,
+con nivel de significancia $\alpha = 0{,}05$.
+
+\begin{table}[h!]
+\centering
+\begin{tabular}{|c|l|c|c|c|c|}
+\hline
+\textbf{Semilla} & \textbf{Método} & \textbf{Chi2 stat} & \textbf{Chi2} & \textbf{KS stat} & \textbf{KS} \\
+\hline
+1273 & T. Inversa & 5{,}7800 & APRUEBA & 0{,}0327 & APRUEBA \\
+1273 & Rechazo    & 5{,}7800 & APRUEBA & 0{,}0327 & APRUEBA \\
+3728 & T. Inversa & 8{,}0000 & APRUEBA & 0{,}0340 & APRUEBA \\
+3728 & Rechazo    & 8{,}0000 & APRUEBA & 0{,}0340 & APRUEBA \\
+7198 & T. Inversa & 20{,}220 & RECHAZA & 0{,}0307 & APRUEBA \\
+7198 & Rechazo    & 20{,}220 & RECHAZA & 0{,}0307 & APRUEBA \\
+\hline
+\end{tabular}
+\caption{Resultados de los tests para $\mathcal{U}(0,1)$, $N=1000$, $\alpha=0{,}05$}
+\end{table}
+
+El rechazo del test Chi-cuadrado con semilla 7198 (p-valor $= 0{,}0166$) corresponde a un
+error de tipo I: con $\alpha = 0{,}05$, el 5\% de los tests puede rechazar $H_0$ aún cuando
+la distribución es correcta. El test KS aprueba en todos los casos, confirmando la calidad
+del generador.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\textwidth]{01_uniforme.png}
+    \caption{Histograma comparativo entre el generador GCL y la PDF teórica de $\mathcal{U}(0,1)$, con $N=1000$ muestras y semilla 1273.}
+\end{figure}
+
+
+% ============================================================
+% 2. DISTRIBUCIÓN EXPONENCIAL
+% ============================================================
+\subsection{Distribución Exponencial}
+
+\subsubsection{Definición y parámetros}
+
+Una variable aleatoria continua $X$ sigue una distribución exponencial con parámetro
+$\lambda > 0$ si modela el tiempo de espera entre eventos sucesivos de un proceso de Poisson.
+Se denota $X \sim \text{Exp}(\lambda)$.
+
+\begin{table}[h!]
+\centering
+\begin{tabular}{|c|l|l|}
+\hline
+\textbf{Parámetro} & \textbf{Descripción} & \textbf{Restricción} \\
+\hline
+$\lambda$ & tasa de ocurrencia (inverso de la media) & $\lambda > 0$ \\
+\hline
+\end{tabular}
+\caption{Parámetros de la distribución $\text{Exp}(\lambda)$}
+\end{table}
+
+\subsubsection{Función de Densidad de Probabilidad (PDF)}
+
+\begin{equation}
+f(x) =
+\begin{cases}
+\lambda \, e^{-\lambda x} & \text{si } x \geq 0 \\[4pt]
+0 & \text{en otro caso}
+\end{cases}
+\end{equation}
+
+La función decrece exponencialmente desde $f(0) = \lambda$: los valores pequeños son más
+probables que los grandes.
+
+\subsubsection{Función de Distribución Acumulada (CDF)}
+
+\begin{equation}
+F(x) =
+\begin{cases}
+1 - e^{-\lambda x} & \text{si } x \geq 0 \\[4pt]
+0 & \text{en otro caso}
+\end{cases}
+\end{equation}
+
+\subsubsection{Momentos}
+
+\begin{equation}
+E[X] = \frac{1}{\lambda} \qquad
+\text{Var}[X] = \frac{1}{\lambda^2} \qquad
+\sigma = \frac{1}{\lambda}
+\end{equation}
+
+\subsubsection{Propiedad de la falta de memoria}
+
+\begin{equation}
+P(X > s + t \mid X > s) = P(X > t) \quad \forall\, s, t \geq 0
+\end{equation}
+
+La distribución exponencial es la única distribución continua con esta propiedad. Es la base
+de los modelos de colas y confiabilidad.
+
+\subsubsection{Generación de muestras}
+
+\paragraph{Método de la Transformada Inversa.}
+Igualando la CDF a $u \sim \mathcal{U}(0,1)$ y despejando $x$:
+
+\begin{equation}
+u = 1 - e^{-\lambda x}
+\quad \Longrightarrow \quad
+1 - u = e^{-\lambda x}
+\quad \Longrightarrow \quad
+\boxed{X = -\frac{\ln(U)}{\lambda}}
+\end{equation}
+
+donde se usó que $(1-U) \sim \mathcal{U}(0,1)$ cuando $U \sim \mathcal{U}(0,1)$.
+
+\paragraph{Método de Rechazo.}
+Se usa como función envolvente una exponencial de tasa $\mu < \lambda$:
+
+\begin{equation}
+g(x) = \mu \, e^{-\mu x}, \quad 0 < \mu < \lambda
+\end{equation}
+
+La constante dominante se obtiene maximizando el cociente $f/g$:
+
+\begin{equation}
+\frac{f(x)}{g(x)} = \frac{\lambda}{\mu} \, e^{-(\lambda - \mu)x}
+\quad \Longrightarrow \quad
+c = \sup_{x \geq 0} \frac{f(x)}{g(x)} = \frac{\lambda}{\mu}
+\quad \text{(en } x = 0\text{)}
+\end{equation}
+
+\textbf{Algoritmo:}
+\begin{enumerate}
+    \item Generar $Y \sim \text{Exp}(\mu)$ vía T.\ Inversa: $Y = -\ln(U_1)/\mu$
+    \item Generar $U_2 \sim \mathcal{U}(0,1)$
+    \item Aceptar $Y$ si $\displaystyle U_2 \leq \frac{f(Y)}{c \cdot g(Y)} = e^{-(\lambda - \mu)\,Y}$
+\end{enumerate}
+
+La probabilidad de aceptación es $1/c = \mu/\lambda$. Dado que la Transformada Inversa
+tiene forma cerrada exacta, el Método de Rechazo no ofrece ventaja práctica para esta
+distribución; se presenta como ilustración del método general.
+
+\subsubsection{Testeo estadístico}
+
+Se generaron $N = 1000$ muestras de $\text{Exp}(\lambda = 1)$ usando la Transformada Inversa
+y tres semillas distintas. El test Chi-cuadrado se aplicó con $k = 10$ intervalos
+equiprobables (límites $b_j = -\ln(1 - j/k)/\lambda$); el test KS comparó contra la CDF
+teórica $F(x) = 1 - e^{-x}$.
+
+\begin{table}[h!]
+\centering
+\begin{tabular}{|c|c|c|c|c|}
+\hline
+\textbf{Semilla} & \textbf{Chi2 stat} & \textbf{Chi2} & \textbf{KS stat} & \textbf{KS} \\
+\hline
+1273 & 5{,}7800 & APRUEBA & 0{,}0327 & APRUEBA \\
+3728 & 8{,}0000 & APRUEBA & 0{,}0340 & APRUEBA \\
+7198 & 20{,}220 & RECHAZA & 0{,}0307 & APRUEBA \\
+\hline
+\end{tabular}
+\caption{Resultados de los tests para $\text{Exp}(\lambda=1)$, $N=1000$, $\alpha=0{,}05$}
+\end{table}
+
+El rechazo del Chi-cuadrado con semilla 7198 (p-valor $= 0{,}0166$) es un error de tipo I,
+consistente con el nivel $\alpha = 0{,}05$. El test KS aprueba en todos los casos.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\textwidth]{02_exponencial.png}
+    \caption{Histograma comparativo entre el generador GCL y la PDF teórica de $\mathrm{Exp}(\lambda=1)$, con $N=1000$ muestras y semilla 1273.}
+\end{figure}
+
+
+% ============================================================
+% 3. DISTRIBUCIÓN GAMMA
+% ============================================================
+\subsection{Distribución Gamma}
+
+\subsubsection{Definición y parámetros}
+
+Una variable aleatoria continua $X$ sigue una distribución Gamma con parámetros $\alpha > 0$
+(forma) y $\beta > 0$ (escala). Se denota $X \sim \Gamma(\alpha, \beta)$. Generaliza la
+distribución exponencial y modela el tiempo de espera hasta el $\alpha$-ésimo evento de un
+proceso de Poisson.
+
+\begin{table}[h!]
+\centering
+\begin{tabular}{|c|l|l|}
+\hline
+\textbf{Parámetro} & \textbf{Nombre} & \textbf{Restricción} \\
+\hline
+$\alpha$ & forma (\textit{shape}) & $\alpha > 0$ \\
+$\beta$  & escala (\textit{scale}) & $\beta > 0$ \\
+\hline
+\end{tabular}
+\caption{Parámetros de la distribución $\Gamma(\alpha, \beta)$}
+\end{table}
+
+\subsubsection{Función de Densidad de Probabilidad (PDF)}
+
+\begin{equation}
+f(x) = \frac{x^{\alpha - 1}\, e^{-x/\beta}}{\beta^{\alpha}\, \Gamma(\alpha)}, \quad x > 0
+\end{equation}
+
+donde $\Gamma(\alpha) = \int_0^{\infty} t^{\alpha-1} e^{-t}\, dt$ es la función Gamma de Euler.
+
+\subsubsection{Función de Distribución Acumulada (CDF)}
+
+\begin{equation}
+F(x) = \frac{\gamma(\alpha,\, x/\beta)}{\Gamma(\alpha)}, \quad x > 0
+\end{equation}
+
+donde $\gamma(\alpha, x/\beta)$ es la función Gamma incompleta inferior. No posee forma
+cerrada en el caso general.
+
+\subsubsection{Momentos}
+
+\begin{equation}
+E[X] = \alpha\beta \qquad
+\text{Var}[X] = \alpha\beta^2 \qquad
+\sigma = \beta\sqrt{\alpha}
+\end{equation}
+
+\subsubsection{Casos especiales}
+
+\begin{table}[h!]
+\centering
+\begin{tabular}{|l|l|}
+\hline
+\textbf{Condición} & \textbf{Equivalencia} \\
+\hline
+$\alpha = 1$ & $\text{Exp}(\lambda = 1/\beta)$ \\
+$\alpha = n \in \mathbb{Z}^+$ & Erlang$(n, \beta)$: suma de $n$ exponenciales independientes \\
+$\alpha = k/2,\ \beta = 2$ & $\chi^2$ con $k$ grados de libertad \\
+\hline
+\end{tabular}
+\caption{Casos especiales de $\Gamma(\alpha, \beta)$}
+\end{table}
+
+\subsubsection{Generación de muestras — Transformada Inversa}
+
+La CDF de $\Gamma(\alpha, \beta)$ no tiene forma cerrada en el caso general, por lo que
+$X = F^{-1}(U)$ requiere métodos numéricos. Para $\alpha = n$ entero positivo existe
+una solución analítica exacta basada en la propiedad aditiva de la distribución Gamma.
+
+\paragraph{Caso $\alpha = n$ entero (Método de Erlang).}
+Si $X_1, X_2, \ldots, X_n \overset{\text{i.i.d.}}{\sim} \text{Exp}(1/\beta)$, entonces:
+
+\begin{equation}
+X = \sum_{i=1}^{n} X_i \sim \Gamma(n,\, \beta)
+\end{equation}
+
+Aplicando la Transformada Inversa a cada $X_i = -\beta\ln(U_i)$:
+
+\begin{equation}
+X = -\beta \sum_{i=1}^{n} \ln(U_i)
+= -\beta \ln\!\left(\prod_{i=1}^{n} U_i\right),
+\quad U_i \overset{\text{i.i.d.}}{\sim} \mathcal{U}(0,1)
+\end{equation}
+
+Este método requiere $n$ valores uniformes por muestra y cubre las aplicaciones más
+frecuentes en simulación de sistemas de colas (distribución de Erlang).
+
+\paragraph{Caso $\alpha$ no entero.}
+La generación requiere inversión numérica de la función Gamma incompleta o algoritmos
+especializados como el método de Cheng (1977), los cuales están fuera del alcance del
+presente trabajo.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\textwidth]{03_gamma.png}
+    \caption{Histograma comparativo entre el generador GCL (método de Erlang-2) y la PDF teórica de $\Gamma(\alpha=2,\,\beta=1)$, con $N=1000$ muestras y semilla 1273.}
+\end{figure}
+
+
+% ============================================================
+% 4. DISTRIBUCIÓN NORMAL
+% ============================================================
+\subsection{Distribución Normal}
+
+\subsubsection{Definición y parámetros}
+
+Una variable aleatoria continua $X$ sigue una distribución normal con media $\mu$ y varianza
+$\sigma^2$. Se denota $X \sim \mathcal{N}(\mu, \sigma^2)$. Es la distribución continua más
+importante en probabilidad y estadística, fundamento del Teorema Central del Límite.
+
+\begin{table}[h!]
+\centering
+\begin{tabular}{|c|l|l|}
+\hline
+\textbf{Parámetro} & \textbf{Nombre} & \textbf{Restricción} \\
+\hline
+$\mu$      & media (localización) & $\mu \in \mathbb{R}$ \\
+$\sigma^2$ & varianza (escala)    & $\sigma > 0$ \\
+\hline
+\end{tabular}
+\caption{Parámetros de la distribución $\mathcal{N}(\mu, \sigma^2)$}
+\end{table}
+
+\subsubsection{Función de Densidad de Probabilidad (PDF)}
+
+\begin{equation}
+f(x) = \frac{1}{\sigma\sqrt{2\pi}}\,
+\exp\!\left(-\frac{(x-\mu)^2}{2\sigma^2}\right), \quad x \in \mathbb{R}
+\end{equation}
+
+La curva es simétrica y acampanada centrada en $\mu$. El parámetro $\sigma$ controla el ancho.
+
+\subsubsection{Función de Distribución Acumulada (CDF)}
+
+\begin{equation}
+F(x) = \frac{1}{2}\left[1 + \mathrm{erf}\!\left(\frac{x - \mu}{\sigma\sqrt{2}}\right)\right]
+\end{equation}
+
+donde $\mathrm{erf}$ es la función error de Gauss. No tiene forma cerrada en términos de
+funciones elementales.
+
+\subsubsection{Momentos y regla empírica}
+
+\begin{equation}
+E[X] = \mu \qquad \text{Var}[X] = \sigma^2 \qquad \sigma_X = \sigma
+\end{equation}
+
+\begin{equation}
+P(\mu - k\sigma \leq X \leq \mu + k\sigma) \approx
+\begin{cases} 0{,}6827 & k = 1 \\ 0{,}9545 & k = 2 \\ 0{,}9973 & k = 3 \end{cases}
+\end{equation}
+
+\subsubsection{Normal estándar y estandarización}
+
+El caso $Z \sim \mathcal{N}(0, 1)$ se denomina normal estándar. Toda normal general se
+obtiene por la transformación lineal $X = \mu + \sigma Z$.
+
+\subsubsection{Generación de muestras}
+
+\paragraph{Método de Box-Muller (Transformada Inversa).}
+Dado que la CDF de $\mathcal{N}(0,1)$ no tiene inversa cerrada, se usa la transformada de
+Box-Muller, que genera dos normales estándar independientes a partir de dos valores
+$U_1, U_2 \sim \mathcal{U}(0,1)$.
+
+\textbf{Derivación:} en coordenadas polares $Z_1 = R\cos\theta$, $Z_2 = R\sin\theta$, para
+$Z_1, Z_2 \sim \mathcal{N}(0,1)$ independientes se cumple que $\theta = 2\pi U_2$ y
+$R^2 = -2\ln(U_1)$ (por la Transformada Inversa de $\chi^2(2)$). Entonces:
+
+\begin{equation}
+\boxed{Z_1 = \sqrt{-2\ln U_1}\,\cos(2\pi U_2)} \qquad
+\boxed{Z_2 = \sqrt{-2\ln U_1}\,\sin(2\pi U_2)}
+\end{equation}
+
+Para obtener $X \sim \mathcal{N}(\mu, \sigma^2)$: $X = \mu + \sigma Z$.
+
+\paragraph{Método de Rechazo.}
+Se usa $\text{Exp}(1)$ como envolvente para la semidistribución normal ($z \geq 0$),
+aprovechando la simetría.
+
+La constante dominante se obtiene maximizando $f_+(z)/g(z)$ donde
+$f_+(z) = \sqrt{2/\pi}\,e^{-z^2/2}$ y $g(z) = e^{-z}$:
+
+\begin{equation}
+c = \sqrt{\frac{2e}{\pi}}, \qquad
+\text{criterio de aceptación: } U_2 \leq e^{-(Y-1)^2/2}
+\end{equation}
+
+\textbf{Algoritmo:}
+\begin{enumerate}
+    \item Generar $Y = -\ln(U_1) \sim \text{Exp}(1)$
+    \item Aceptar $Y$ si $U_2 \leq e^{-(Y-1)^2/2}$; si no, reiniciar
+    \item Asignar signo: $Z = Y$ si $U_3 < 0{,}5$, en caso contrario $Z = -Y$
+    \item $X = \mu + \sigma Z$
+\end{enumerate}
+
+La eficiencia es $1/c = \sqrt{\pi/(2e)} \approx 76\%$.
+
+\subsubsection{Código Python}
+
+\begin{verbatim}
+def normal_box_muller(mu, sigma, n, semilla):
+    gcl1 = GeneradorGCL(semilla=semilla)
+    gcl2 = GeneradorGCL(semilla=semilla + 1)
+    muestras = []
+    while len(muestras) < n:
+        u1, u2 = gcl1.siguiente(), gcl2.siguiente()
+        z1 = math.sqrt(-2*math.log(u1)) * math.cos(2*math.pi*u2)
+        z2 = math.sqrt(-2*math.log(u1)) * math.sin(2*math.pi*u2)
+        muestras.append(mu + sigma * z1)
+        if len(muestras) < n:
+            muestras.append(mu + sigma * z2)
+    return muestras
+
+def normal_rechazo(mu, sigma, n, semilla):
+    gcl1 = GeneradorGCL(semilla=semilla)
+    gcl2 = GeneradorGCL(semilla=semilla + 1)
+    gcl3 = GeneradorGCL(semilla=semilla + 2)
+    muestras = []
+    while len(muestras) < n:
+        y = -math.log(gcl1.siguiente())
+        if gcl2.siguiente() <= math.exp(-(y - 1)**2 / 2):
+            z = y if gcl3.siguiente() < 0.5 else -y
+            muestras.append(mu + sigma * z)
+    return muestras
+\end{verbatim}
+
+\subsubsection{Testeo estadístico}
+
+Se generaron $N = 1000$ muestras de $\mathcal{N}(0,1)$ con ambos métodos y tres semillas.
+El test Chi-cuadrado usó $k = 10$ intervalos equiprobables con límites $\Phi^{-1}(j/k)$;
+el KS comparó contra la CDF teórica normal.
+
+\begin{table}[h!]
+\centering
+\begin{tabular}{|c|l|c|c|c|c|}
+\hline
+\textbf{Semilla} & \textbf{Método} & \textbf{Chi2 stat} & \textbf{Chi2} & \textbf{KS stat} & \textbf{KS} \\
+\hline
+1273 & Box-Muller &  4{,}7200 & APRUEBA & 0{,}0296 & APRUEBA \\
+1273 & Rechazo    &  5{,}2200 & APRUEBA & 0{,}0297 & APRUEBA \\
+3728 & Box-Muller & 16{,}560  & APRUEBA & 0{,}0278 & APRUEBA \\
+3728 & Rechazo    & 12{,}180  & APRUEBA & 0{,}0331 & APRUEBA \\
+7198 & Box-Muller &  7{,}0800 & APRUEBA & 0{,}0236 & APRUEBA \\
+7198 & Rechazo    & 19{,}400  & RECHAZA & 0{,}0482 & RECHAZA \\
+\hline
+\end{tabular}
+\caption{Resultados de los tests para $\mathcal{N}(0,1)$, $N=1000$, $\alpha=0{,}05$}
+\end{table}
+
+Box-Muller aprueba todos los tests en las tres semillas. El Método de Rechazo rechaza
+Chi2 y KS con semilla 7198, lo que indica correlación entre los tres generadores GCL
+inicializados con semillas consecutivas (7198, 7199, 7200) para esa semilla particular.
+Box-Muller es el método recomendado para esta distribución.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\textwidth]{04_normal.png}
+    \caption{Histograma comparativo entre el generador Box-Muller y la PDF teórica de $\mathcal{N}(0,1)$, con $N=1000$ muestras y semilla 1273.}
+\end{figure}
+
+
+% ============================================================
+% 5. DISTRIBUCIÓN PASCAL
+% ============================================================
+\subsection{Distribución Pascal}
+
+\subsubsection{Definición y parámetros}
+
+Una variable aleatoria discreta $X$ sigue una distribución Pascal con parámetros
+$k \in \mathbb{Z}^+$ y $0 < p \leq 1$ si representa el número de ensayos de Bernoulli
+necesarios para obtener exactamente $k$ éxitos. Se denota $X \sim \text{Pascal}(k, p)$.
+
+\begin{table}[h!]
+\centering
+\begin{tabular}{|c|l|l|}
+\hline
+\textbf{Parámetro} & \textbf{Descripción} & \textbf{Restricción} \\
+\hline
+$k$ & número de éxitos requeridos & $k \in \mathbb{Z}^+$ \\
+$p$ & probabilidad de éxito por ensayo & $0 < p \leq 1$ \\
+\hline
+\end{tabular}
+\caption{Parámetros de la distribución $\text{Pascal}(k, p)$}
+\end{table}
+
+\subsubsection{Función de Probabilidad (PMF)}
+
+\begin{equation}
+P(X = x) = \binom{x-1}{k-1} p^k (1-p)^{x-k}, \quad x = k,\, k+1,\, k+2, \ldots
+\end{equation}
+
+\subsubsection{Función de Distribución Acumulada (CDF)}
+
+\begin{equation}
+F(x) = \sum_{j=k}^{x} \binom{j-1}{k-1} p^k (1-p)^{j-k}
+\end{equation}
+
+No tiene forma cerrada; se calcula acumulando términos de la PMF.
+
+\subsubsection{Momentos}
+
+\begin{equation}
+E[X] = \frac{k}{p} \qquad \text{Var}[X] = \frac{k(1-p)}{p^2}
+\end{equation}
+
+\subsubsection{Relación con otras distribuciones}
+
+\begin{itemize}
+    \item $k = 1$: distribución Geométrica $\text{Geom}(p)$.
+    \item $\text{Pascal}(k, p)$ es la suma de $k$ variables $\text{Geom}(p)$ independientes.
+\end{itemize}
+
+\subsubsection{Generación de muestras — Transformada Inversa}
+
+\paragraph{Método general (acumulación de PMF).}
+Para distribuciones discretas sin inversa analítica, el método consiste en acumular
+probabilidades hasta superar el valor $U \sim \mathcal{U}(0,1)$:
+
+\begin{enumerate}
+    \item Generar $U \sim \mathcal{U}(0,1)$
+    \item Iniciar en $x = k$,\ $F \leftarrow p^k$
+    \item Mientras $F < U$: incrementar $x$,\ sumar $P(X=x)$ a $F$
+    \item Devolver $x$
+\end{enumerate}
+
+\paragraph{Método eficiente: suma de Geométricas.}
+Dado que $\text{Pascal}(k,p)$ es suma de $k$ variables $\text{Geom}(p)$ i.i.d., se aplica
+la Transformada Inversa a cada geométrica. La CDF de $\text{Geom}(p)$ es
+$F(x) = 1-(1-p)^x$, de donde:
+
+\begin{equation}
+x = \left\lceil \frac{\ln(u)}{\ln(1-p)} \right\rceil
+\end{equation}
+
+Sumando $k$ geométricas independientes:
+
+\begin{equation}
+\boxed{X = \sum_{i=1}^{k}
+\left\lceil \frac{\ln(U_i)}{\ln(1-p)} \right\rceil,
+\quad U_i \overset{\text{i.i.d.}}{\sim} \mathcal{U}(0,1)}
+\end{equation}
+
+Este método requiere solo $k$ valores uniformes y evita la acumulación iterativa de la PMF.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\textwidth]{05_pascal.png}
+    \caption{Gráfico comparativo entre el generador GCL y la PMF teórica de $\mathrm{Pascal}(r=3,\,p=0{,}5)$, con $N=1000$ muestras y semilla 1273.}
+\end{figure}
+
+
+% ============================================================
+% 6. DISTRIBUCIÓN BINOMIAL
+% ============================================================
+\subsection{Distribución Binomial}
+
+\subsubsection{Definición y parámetros}
+
+Una variable aleatoria discreta $X$ sigue una distribución binomial con parámetros
+$n \in \mathbb{Z}^+$ y $0 \leq p \leq 1$ si representa el número de éxitos en $n$ ensayos
+de Bernoulli independientes. Se denota $X \sim B(n, p)$.
+
+\begin{table}[h!]
+\centering
+\begin{tabular}{|c|l|l|}
+\hline
+\textbf{Parámetro} & \textbf{Descripción} & \textbf{Restricción} \\
+\hline
+$n$ & número de ensayos    & $n \in \mathbb{Z}^+$ \\
+$p$ & probabilidad de éxito & $0 \leq p \leq 1$ \\
+\hline
+\end{tabular}
+\caption{Parámetros de la distribución $B(n, p)$}
+\end{table}
+
+\subsubsection{Función de Probabilidad (PMF)}
+
+\begin{equation}
+P(X = x) = \binom{n}{x} p^x (1-p)^{n-x}, \quad x = 0, 1, \ldots, n
+\end{equation}
+
+\subsubsection{Función de Distribución Acumulada (CDF)}
+
+\begin{equation}
+F(x) = \sum_{j=0}^{x} \binom{n}{j} p^j (1-p)^{n-j}
+\end{equation}
+
+\subsubsection{Momentos}
+
+\begin{equation}
+E[X] = np \qquad \text{Var}[X] = np(1-p) \qquad \sigma = \sqrt{np(1-p)}
+\end{equation}
+
+\subsubsection{Relación con otras distribuciones}
+
+\begin{itemize}
+    \item $n = 1$: distribución de Bernoulli.
+    \item $n$ grande, $p$ pequeño: $B(n,p) \approx \text{Poisson}(\lambda = np)$.
+    \item $n$ grande: $B(n,p) \approx \mathcal{N}(np,\, np(1-p))$.
+\end{itemize}
+
+\subsubsection{Generación de muestras — Transformada Inversa}
+
+\paragraph{Método general (acumulación de PMF).}
+Acumular $P(X = x)$ hasta superar $U$, usando la recurrencia:
+
+\begin{equation}
+P(X = x) = P(X = x-1) \cdot \frac{(n - x + 1)}{x} \cdot \frac{p}{1-p}
+\end{equation}
+
+\paragraph{Método eficiente: suma de ensayos de Bernoulli.}
+Como $B(n,p)$ es la suma de $n$ variables de Bernoulli independientes:
+
+\begin{equation}
+\boxed{X = \sum_{i=1}^{n} \mathbf{1}[U_i < p],
+\quad U_i \overset{\text{i.i.d.}}{\sim} \mathcal{U}(0,1)}
+\end{equation}
+
+Este método requiere exactamente $n$ valores uniformes por muestra.
+
+\subsubsection{Testeo estadístico}
+
+Se generaron $N = 1000$ muestras de $B(n=20, p=0{,}5)$ con tres semillas. El test
+Chi-cuadrado comparó frecuencias observadas contra las esperadas por la PMF, agrupando
+celdas con frecuencia esperada menor a 5.
+
+\begin{table}[h!]
+\centering
+\begin{tabular}{|c|c|c|c|}
+\hline
+\textbf{Semilla} & \textbf{Chi2 stat} & \textbf{Valor crítico} & \textbf{Resultado} \\
+\hline
+1273 & 15{,}579 & 21{,}026 & APRUEBA \\
+3728 & 11{,}729 & 21{,}026 & APRUEBA \\
+7198 & 14{,}553 & 21{,}026 & APRUEBA \\
+\hline
+\end{tabular}
+\caption{Resultados del test Chi-cuadrado para $B(20, 0{,}5)$, $N=1000$, $\alpha=0{,}05$}
+\end{table}
+
+El generador aprueba en las tres semillas, confirmando la correcta implementación.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\textwidth]{06_binomial.png}
+    \caption{Gráfico comparativo entre el generador GCL y la PMF teórica de $B(n=20,\,p=0{,}5)$, con $N=1000$ muestras y semilla 1273.}
+\end{figure}
+
+
+% ============================================================
+% 7. DISTRIBUCIÓN HIPERGEOMÉTRICA
+% ============================================================
+\subsection{Distribución Hipergeométrica}
+
+\subsubsection{Definición y parámetros}
+
+Una variable aleatoria discreta $X$ sigue una distribución hipergeométrica con parámetros
+$N$, $K$ y $n$ si representa el número de elementos de tipo ``éxito'' en una muestra de
+tamaño $n$ extraída \textbf{sin reemplazo} de una población de $N$ elementos, de los cuales
+$K$ son éxitos. Se denota $X \sim H(N, K, n)$.
+
+\begin{table}[h!]
+\centering
+\begin{tabular}{|c|l|l|}
+\hline
+\textbf{Parámetro} & \textbf{Descripción} & \textbf{Restricción} \\
+\hline
+$N$ & tamaño de la población & $N \in \mathbb{Z}^+$ \\
+$K$ & éxitos en la población & $0 \leq K \leq N$ \\
+$n$ & tamaño de la muestra   & $0 \leq n \leq N$ \\
+\hline
+\end{tabular}
+\caption{Parámetros de la distribución $H(N, K, n)$}
+\end{table}
+
+\subsubsection{Función de Probabilidad (PMF)}
+
+\begin{equation}
+P(X = x) = \frac{\dbinom{K}{x}\dbinom{N-K}{n-x}}{\dbinom{N}{n}},
+\quad x = \max(0,\,n+K-N),\, \ldots,\, \min(n,\,K)
+\end{equation}
+
+\subsubsection{Función de Distribución Acumulada (CDF)}
+
+\begin{equation}
+F(x) = \sum_{j=\max(0,\,n+K-N)}^{x}
+\frac{\dbinom{K}{j}\dbinom{N-K}{n-j}}{\dbinom{N}{n}}
+\end{equation}
+
+\subsubsection{Momentos}
+
+\begin{equation}
+E[X] = \frac{nK}{N} \qquad
+\text{Var}[X] = n\,\frac{K}{N}\,\frac{N-K}{N}\,\frac{N-n}{N-1}
+\end{equation}
+
+\subsubsection{Diferencia con la Binomial}
+
+La Binomial modela muestreo \textbf{con} reemplazo. Para $N \to \infty$ con $K/N \to p$
+fijo se cumple $H(N,K,n) \to B(n,p)$.
+
+\subsubsection{Generación de muestras — Transformada Inversa}
+
+La CDF no tiene forma cerrada. Se aplica el algoritmo general de acumulación de PMF,
+usando la recurrencia para evitar recalcular coeficientes binomiales desde cero:
+
+\begin{equation}
+P(X = x) = P(X = x-1) \cdot
+\frac{(K - x + 1)\,(n - x + 1)}{x\,(N - K - n + x)}
+\end{equation}
+
+\textbf{Algoritmo:}
+\begin{enumerate}
+    \item Generar $U \sim \mathcal{U}(0,1)$
+    \item Iniciar en $x = x_{\min} = \max(0,\, n+K-N)$,\ calcular $F \leftarrow P(X = x_{\min})$
+    \item Mientras $F < U$: incrementar $x$,\ sumar $P(X=x)$ a $F$ usando la recurrencia
+    \item Devolver $x$
+\end{enumerate}
+
+\begin{equation}
+\boxed{X = \min\!\left\{x \geq x_{\min} : F(x) \geq U\right\},
+\quad U \sim \mathcal{U}(0,1)}
+\end{equation}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\textwidth]{07_hipergeometrica.png}
+    \caption{Gráfico comparativo entre el generador GCL y la PMF teórica de $H(N=50,\,K=20,\,n=10)$, con $N=1000$ muestras y semilla 1273.}
+\end{figure}
+
+% ============================================================
+% 8. DISTRIBUCIÓN DE POISSON
+% ============================================================
+\subsection{Distribución de Poisson}
+
+\subsubsection{Definición y parámetros}
+
+Una variable aleatoria discreta $X$ sigue una distribución de Poisson con parámetro $\lambda$ si
+representa el número de eventos que ocurren en un intervalo fijo de tiempo o espacio, bajo las
+condiciones de que los eventos son independientes entre sí y ocurren a una tasa promedio constante.
+Se denota $X \sim \text{Poisson}(\lambda)$.
+
+\begin{table}[h!]
+\centering
+\begin{tabular}{|c|l|l|}
+\hline
+\textbf{Parámetro} & \textbf{Descripción} & \textbf{Restricción} \\
+\hline
+$\lambda$ & tasa media de ocurrencia & $\lambda > 0$ \\
+\hline
+\end{tabular}
+\caption{Parámetros de la distribución $\text{Poisson}(\lambda)$}
+\end{table}
+
+\subsubsection{Función de Probabilidad (PMF)}
+
+\begin{equation}
+P(X = k) = \frac{e^{-\lambda}\,\lambda^k}{k!}, \quad k = 0, 1, 2, \ldots
+\end{equation}
+
+La PMF es positiva para todo entero no negativo; su suma es 1 por la serie de Taylor de $e^{\lambda}$.
+
+\subsubsection{Función de Distribución Acumulada (CDF)}
+
+\begin{equation}
+F(x) = e^{-\lambda} \sum_{k=0}^{\lfloor x \rfloor} \frac{\lambda^k}{k!}
+\end{equation}
+
+No admite forma cerrada elemental; se evalúa por acumulación de términos.
+
+\subsubsection{Momentos}
+
+\begin{equation}
+E[X] = \lambda \qquad \text{Var}[X] = \lambda \qquad \sigma = \sqrt{\lambda}
+\end{equation}
+
+Una propiedad característica: media y varianza coinciden e igualan al parámetro $\lambda$.
+
+\subsubsection{Generación de muestras — Transformada Inversa}
+
+Para distribuciones discretas, la transformada inversa busca el menor $k$ tal que $F(k) \geq U$.
+Para Poisson existe una formulación equivalente basada en los tiempos de llegada exponenciales:
+si los intervalos entre eventos siguen $\text{Exp}(\lambda)$, el número de llegadas en $[0,1)$
+sigue $\text{Poisson}(\lambda)$. Esto lleva al \textbf{algoritmo del producto}:
+
+\begin{enumerate}
+    \item Generar $U \sim \mathcal{U}(0,1)$; inicializar $P \leftarrow U$,\ $k \leftarrow 0$
+    \item Mientras $P \geq e^{-\lambda}$: generar nuevo $U$,\ $P \leftarrow P \cdot U$,\ $k \leftarrow k + 1$
+    \item Devolver $X = k$
+\end{enumerate}
+
+\begin{equation}
+\boxed{X = \min\!\left\{k \geq 0 : \prod_{i=1}^{k+1} U_i < e^{-\lambda}\right\},
+\quad U_i \sim \mathcal{U}(0,1)}
+\end{equation}
+
+\subsubsection{Testeo estadístico}
+
+Se generaron $N = 1000$ muestras de $\text{Poisson}(\lambda = 4)$ con tres semillas. El test
+Chi-cuadrado comparó frecuencias observadas contra las esperadas por la PMF, agrupando celdas
+con frecuencia esperada menor a 5 en la cola derecha.
+
+\begin{table}[h!]
+\centering
+\begin{tabular}{|c|c|c|c|}
+\hline
+\textbf{Semilla} & \textbf{Chi2 stat} & \textbf{Valor crítico} & \textbf{Resultado} \\
+\hline
+1273 & 12{,}003 & 18{,}307 & APRUEBA \\
+3728 &  6{,}058 & 18{,}307 & APRUEBA \\
+7198 & 15{,}854 & 18{,}307 & APRUEBA \\
+\hline
+\end{tabular}
+\caption{Resultados del test Chi-cuadrado para $\text{Poisson}(4)$, $N=1000$, $\alpha=0{,}05$, $gl=10$}
+\end{table}
+
+El generador aprueba en las tres semillas, confirmando que el algoritmo del producto
+reproduce correctamente la distribución de Poisson.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\textwidth]{08_poisson.png}
+    \caption{Gráfico comparativo entre el generador GCL (algoritmo del producto) y la PMF teórica de $\mathrm{Poisson}(\lambda=4)$, con $N=1000$ muestras y semilla 1273.}
+\end{figure}
+
+% ============================================================
+% 9. DISTRIBUCIÓN EMPÍRICA DISCRETA
+% ============================================================
+\subsection{Distribución Empírica Discreta}
+
+\subsubsection{Definición y parámetros}
+
+Una distribución empírica discreta no tiene forma paramétrica cerrada: queda definida por una
+tabla de $n$ pares $(x_i,\, p_i)$ donde $p_i = P(X = x_i)$, con $\sum_{i=1}^n p_i = 1$.
+Se utiliza cuando los datos provienen de la observación directa y no se ajustan a ninguna
+distribución teórica conocida.
+
+\begin{table}[h!]
+\centering
+\begin{tabular}{|c|l|l|}
+\hline
+\textbf{Parámetro} & \textbf{Descripción} & \textbf{Restricción} \\
+\hline
+$x_i$ & valor posible de la variable & $x_1 < x_2 < \cdots < x_n$ \\
+$p_i$ & probabilidad asociada a $x_i$ & $p_i > 0,\ \displaystyle\sum_{i=1}^n p_i = 1$ \\
+\hline
+\end{tabular}
+\caption{Parámetros de la distribución empírica discreta}
+\end{table}
+
+Como ejemplo ilustrativo se utiliza la distribución de demanda diaria de unidades,
+caso típico presentado en Naylor (1982):
+
+\begin{table}[h!]
+\centering
+\begin{tabular}{|c|c|c|c|c|c|}
+\hline
+$x_i$ & 0 & 1 & 2 & 3 & 4 \\
+\hline
+$p_i$ & 0{,}10 & 0{,}20 & 0{,}30 & 0{,}25 & 0{,}15 \\
+\hline
+\end{tabular}
+\caption{Distribución empírica discreta de demanda diaria}
+\end{table}
+
+\subsubsection{Función de Probabilidad (PMF)}
+
+\begin{equation}
+P(X = x_i) = p_i, \quad i = 1, \ldots, n
+\end{equation}
+
+\subsubsection{Función de Distribución Acumulada (CDF)}
+
+\begin{equation}
+F(x_i) = \sum_{j=1}^{i} p_j
+\end{equation}
+
+Para el ejemplo: $F(0) = 0{,}10$;\ $F(1) = 0{,}30$;\ $F(2) = 0{,}60$;\ $F(3) = 0{,}85$;\ $F(4) = 1{,}00$.
+
+\subsubsection{Momentos}
+
+\begin{equation}
+E[X] = \sum_{i=1}^n x_i\, p_i \qquad
+\text{Var}[X] = \sum_{i=1}^n x_i^2\, p_i - \bigl(E[X]\bigr)^2
+\end{equation}
+
+Para el ejemplo: $E[X] = 2{,}15$;\ $\text{Var}[X] = 1{,}4275$.
+
+\subsubsection{Generación de muestras — Transformada Inversa}
+
+Se construye la CDF acumulada y se busca el primer $x_i$ tal que $F(x_i) \geq U$:
+
+\begin{enumerate}
+    \item Generar $U \sim \mathcal{U}(0,1)$
+    \item Recorrer la tabla: si $F(x_{i-1}) < U \leq F(x_i)$, devolver $X = x_i$
+\end{enumerate}
+
+\begin{equation}
+\boxed{X = x_i \text{ tal que } F(x_{i-1}) < U \leq F(x_i),\quad U \sim \mathcal{U}(0,1)}
+\end{equation}
+
+\subsubsection{Testeo estadístico}
+
+Se generaron $N = 1000$ muestras con la tabla de demanda diaria y tres semillas. El test
+Chi-cuadrado comparó frecuencias observadas contra las esperadas por la PMF empírica.
+
+\begin{table}[h!]
+\centering
+\begin{tabular}{|c|c|c|c|}
+\hline
+\textbf{Semilla} & \textbf{Chi2 stat} & \textbf{Valor crítico} & \textbf{Resultado} \\
+\hline
+1273 & 1{,}561 & 9{,}488 & APRUEBA \\
+3728 & 5{,}351 & 9{,}488 & APRUEBA \\
+7198 & 3{,}281 & 9{,}488 & APRUEBA \\
+\hline
+\end{tabular}
+\caption{Resultados del test Chi-cuadrado para la distribución empírica discreta, $N=1000$, $\alpha=0{,}05$}
+\end{table}
+
+El generador aprueba en las tres semillas, confirmando que la transformada inversa por
+búsqueda de intervalos reproduce correctamente las probabilidades empíricas definidas.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\textwidth]{09_empirica_discreta.png}
+    \caption{Gráfico comparativo entre el generador GCL y la distribución empírica teórica de demanda diaria \cite{naylor1982}, con $N=1000$ muestras y semilla 1273.}
+\end{figure}

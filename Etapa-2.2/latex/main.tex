@@ -1,0 +1,319 @@
+\documentclass[a4paper, 11pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{amsmath, amsfonts}
+\usepackage{graphicx}
+\graphicspath{{./}}
+\usepackage{float}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\usepackage{booktabs}
+\usepackage{url}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{listings}
+
+% --- HEADER ---
+\pagestyle{fancy}
+\fancyhf{}
+\rhead{\small TP 2.2 - GENERADORES DE NÚMEROS PSEUDOALEATORIOS - 29 DE MAYO, 2026}
+\rfoot{\thepage}
+\renewcommand{\headrulewidth}{0pt}
+\setlength{\parindent}{0pt}
+\titleformat{\section}{\normalfont\Large\bfseries}{\thesection.}{1em}{}
+
+\begin{document}
+
+% ============================================================
+% CARÁTULA
+% ============================================================
+\begin{titlepage}
+\centering
+\vspace*{0.8cm}
+
+\includegraphics[width=0.30\textwidth]{Image.jpg}\\[0.6cm]
+
+\rule{\linewidth}{0.5mm}\\[0.4cm]
+{\LARGE\bfseries TP 2.2 - GENERADORES DE NÚMEROS PSEUDOALEATORIOS\\[0.2cm]
+DE DISTINTAS DISTRIBUCIONES DE PROBABILIDAD}\\[0.4cm]
+{\large\textsc{Asignatura: Simulación}}\\[0.2cm]
+{\normalsize Comisión: 402}\\[0.3cm]
+\rule{\linewidth}{0.5mm}\\[-0.05cm]
+\rule{\linewidth}{0.5mm}\\[1.8cm]
+
+\begin{tabular}{cc}
+  \parbox{0.45\textwidth}{\centering
+    \textbf{Luis Parmigiani}\\
+    Legajo: 52933\\
+    \textit{Universidad Tecnológica Nacional - FRRO}\\
+    Zeballos 1341, S2000, Argentina\\
+    \texttt{parmigianiluis04@gmail.com}} &
+  \parbox{0.45\textwidth}{\centering
+    \textbf{Agustín Dana}\\
+    Legajo: 52935\\
+    \textit{Universidad Tecnológica Nacional - FRRO}\\
+    Zeballos 1341, S2000, Argentina\\
+    \texttt{agusidana04@gmail.com}} \\[1.2cm]
+  \parbox{0.45\textwidth}{\centering
+    \textbf{Bruno Vitali}\\
+    Legajo: 53137\\
+    \textit{Universidad Tecnológica Nacional - FRRO}\\
+    Zeballos 1341, S2000, Argentina\\
+    \texttt{brunoVitali33@gmail.com}} &
+  \parbox{0.45\textwidth}{\centering
+    \textbf{Stéfano Conti}\\
+    Legajo: 52850\\
+    \textit{Universidad Tecnológica Nacional - FRRO}\\
+    Zeballos 1341, S2000, Argentina\\
+    \texttt{stefano.conti2004@gmail.com}}
+\end{tabular}
+
+\vfill
+
+{\normalsize\textbf{Profesores:} Juan Ignacio Torres (Práctica) y Jorge Flamini (Teoría)}\\[0.4cm]
+{\normalsize 29 de Mayo, 2026}
+\end{titlepage}
+
+% ============================================================
+% ÍNDICE
+% ============================================================
+\newpage
+\thispagestyle{empty}
+\pagenumbering{roman}
+\tableofcontents
+\newpage
+\pagenumbering{arabic}
+
+% ============================================================
+% ABSTRACT
+% ============================================================
+\begin{abstract}
+\noindent
+El presente trabajo tiene por objetivo construir generadores de números pseudoaleatorios
+para nueve distribuciones de probabilidad —cuatro continuas y cinco discretas— a partir
+del generador uniforme $\mathcal{U}(0,1)$ ya validado en el trabajo anterior (Generador
+Congruencial Lineal con parámetros ANSI C). Para cada distribución se estudia la teoría
+subyacente, se deriva matemáticamente la Transformada Inversa y, cuando corresponde,
+el Método de Rechazo. Se implementan en Python 3.x los generadores de la distribución
+Uniforme y Normal; el resto se describe algorítmicamente. La correcta generación de
+valores se valida mediante tests estadísticos Chi-cuadrado y Kolmogorov-Smirnov, con
+$N=1000$ muestras y $\alpha = 0{,}05$, usando tres semillas distintas. Los 18 ensayos
+de testeo requeridos por la cátedra aprueban sin excepción, confirmando que los
+algoritmos basados en \cite{naylor1982} producen muestras estadísticamente indistinguibles
+de las distribuciones teóricas de referencia.
+\end{abstract}
+\vspace{0.5cm}
+\noindent\textbf{Keywords:} Simulación $\cdot$ generadores pseudoaleatorios $\cdot$
+distribuciones de probabilidad $\cdot$ Transformada Inversa $\cdot$ Método de Rechazo
+
+\newpage
+
+% ============================================================
+% SECCIÓN 1 — INTRODUCCIÓN
+% ============================================================
+\section{Introducción}
+
+El estudio anterior a este demostró que la generación de números pseudoaleatorios no es
+una tarea sencilla. Por suerte para nosotros es un tema felizmente resuelto para nuestras
+necesidades. Ahora que tenemos un generador testeado, es hora de empezar a utilizarlo. El
+problema surge en cómo hacerlo. Si lo empleamos tal y como está, este solo genera valores
+uniformes continuos entre 0 y 1.
+
+Como hemos aprendido en la materia Probabilidad y Estadística, hay otras distribuciones
+de probabilidad tanto continuas como discretas. La pregunta que debemos responder es:
+¿cómo hacemos para generar valores de distintas distribuciones?
+
+La buena noticia es que la solución ya ha sido inventada y es nuestra tarea como ingenieros
+redescubrir el mecanismo para implementarlo en nuestros experimentos. Por lo tanto, el
+objetivo de este trabajo es construir generadores de números pseudoaleatorios de distintas
+probabilidades por medio de un material antiguo pero sumamente práctico elaborado por el
+autor Thomas Naylor \cite{naylor1982}.
+
+% ============================================================
+% SECCIÓN 2 — DESCRIPCIÓN DEL TRABAJO
+% ============================================================
+\section{Descripción del trabajo de investigación}
+
+El trabajo consiste en hacer un estudio de las distintas distribuciones de probabilidad
+que abarcan una gran cantidad de los fenómenos de interés para la simulación. De cada una
+se deben realizar las siguientes tareas:
+
+\begin{itemize}
+    \item Introducir la distribución de probabilidad en forma teórica; incluyendo sus
+          parámetros de entrada, función de probabilidad, gráficas, etc.
+    \item Describir matemáticamente el paso a paso para la obtención de su función
+          acumulada e inversa.
+    \item Elaborar un programa por cada distribución de probabilidad en lenguaje Python 3.x.
+    \item Testear la generación de valores de la forma más conveniente para cada caso.
+\end{itemize}
+
+% ============================================================
+% SECCIÓN 3 — CONCEPTOS TEÓRICOS FUNDAMENTALES
+% ============================================================
+\newpage
+\section{Conceptos Teóricos Fundamentales}
+
+Antes de desarrollar cada distribución, se presentan brevemente los conceptos matemáticos
+que subyacen a todos los métodos de generación del trabajo.
+
+\subsection{Variable aleatoria: tipos}
+
+Una \textbf{variable aleatoria} (v.a.) es una función que asigna un valor numérico a cada
+resultado posible de un experimento aleatorio. Se distinguen dos tipos:
+
+\begin{itemize}
+    \item \textbf{Discreta}: toma valores en un conjunto numerable
+          (finito o infinito contable). Su comportamiento queda descrito por la
+          Función de Probabilidad (PMF): $P(X = x_i) = p_i$.
+    \item \textbf{Continua}: toma valores en un intervalo de los reales.
+          Su comportamiento queda descrito por la Función de Densidad de
+          Probabilidad (PDF): $f(x) \geq 0$ con $\int_{-\infty}^{\infty} f(x)\,dx = 1$.
+\end{itemize}
+
+En ambos casos, la \textbf{Función de Distribución Acumulada} (CDF) es
+$F(x) = P(X \leq x)$ y cumple $F(-\infty)=0$, $F(+\infty)=1$ y es monótona no
+decreciente. La CDF es el objeto central de la Transformada Inversa.
+
+\subsection{Propiedad de falta de memoria}
+
+Una v.a. $X \geq 0$ posee la \textbf{propiedad de falta de memoria} si:
+\begin{equation}
+P(X > s + t \mid X > s) = P(X > t) \quad \forall\, s, t \geq 0
+\end{equation}
+
+En el caso continuo la única distribución con esta propiedad es la
+\textbf{Exponencial}; en el caso discreto, la \textbf{Geométrica}. Esta propiedad
+significa que el tiempo ya transcurrido no aporta ninguna información sobre el tiempo
+restante, lo que la hace ideal para modelar tiempos de servicio y tiempos entre llegadas
+en sistemas de colas sin memoria histórica.
+
+\subsection{Proceso de Poisson y su conexión con la Exponencial}
+
+Un \textbf{Proceso de Poisson} de tasa $\lambda$ modela la ocurrencia de eventos
+independientes en el tiempo bajo las siguientes condiciones:
+
+\begin{enumerate}
+    \item El número de eventos en intervalos disjuntos es independiente.
+    \item La probabilidad de exactamente un evento en $[t, t+h)$ es $\lambda h + o(h)$.
+    \item La probabilidad de dos o más eventos en $[t, t+h)$ es $o(h)$.
+\end{enumerate}
+
+De estas condiciones se derivan dos resultados fundamentales:
+
+\begin{itemize}
+    \item El \textbf{número de eventos} en un intervalo de longitud $t$ sigue
+          $\text{Poisson}(\lambda t)$.
+    \item El \textbf{tiempo entre eventos consecutivos} sigue
+          $\text{Exp}(\lambda)$.
+\end{itemize}
+
+Esta dualidad es la base del algoritmo del producto utilizado para generar valores
+Poisson a partir de uniformes.
+
+\subsection{Teorema Central del Límite}
+
+Sea $X_1, X_2, \ldots, X_n$ variables aleatorias i.i.d.\ con media $\mu$ y varianza
+$\sigma^2 < \infty$. Entonces:
+\begin{equation}
+\frac{\bar{X}_n - \mu}{\sigma / \sqrt{n}} \xrightarrow{d} \mathcal{N}(0,1)
+\quad \text{cuando } n \to \infty
+\end{equation}
+
+\textbf{Consecuencias prácticas para este trabajo:}
+\begin{itemize}
+    \item La Binomial $B(n,p)$ se aproxima a $\mathcal{N}(np,\, np(1-p))$ para $n$ grande.
+    \item La Gamma $\Gamma(k,\beta)$ converge a una Normal conforme $k$ crece.
+    \item El TCL justifica la ubicuidad de la distribución Normal en fenómenos
+          físicos, económicos e industriales: es el límite de cualquier suma de
+          variables independientes con varianza finita.
+\end{itemize}
+
+\subsection{Relaciones entre distribuciones}
+
+Las nueve distribuciones del trabajo no son independientes entre sí: forman una red
+de relaciones que facilita su comprensión conjunta.
+
+\begin{table}[H]
+\centering
+\begin{tabular}{ll}
+\toprule
+\textbf{Relación} & \textbf{Condición} \\
+\midrule
+$\Gamma(\alpha=k,\,\beta) = \sum_{i=1}^k \text{Exp}(\beta)$ &
+    $k$ entero (Erlang-$k$) \\
+$\text{Poisson}(\lambda) = \lim B(n, p)$ &
+    $n \to \infty,\; p \to 0,\; np = \lambda$ \\
+$\text{Pascal}(r, p) = \sum_{i=1}^r \text{Geom}(p)$ &
+    $r$ entero \\
+$H(N, K, n) \to B(n, K/N)$ &
+    $N \to \infty,\; K/N \to p$ \\
+$B(n, p) \to \mathcal{N}(np,\, np(1-p))$ &
+    $n$ grande (TCL) \\
+\bottomrule
+\end{tabular}
+\caption{Relaciones de convergencia y composición entre distribuciones}
+\end{table}
+
+Estas relaciones permiten elegir el método de generación más eficiente: por ejemplo,
+generar Gamma entera como suma de Exponenciales evita la inversión numérica de la
+función Gamma incompleta.
+
+% ============================================================
+% SECCIÓN 4 — DISTRIBUCIONES DE PROBABILIDAD
+% ============================================================
+\newpage
+\section{Distribuciones de Probabilidad}
+
+\input{secciones}
+
+% ============================================================
+% SECCIÓN — CONCLUSIÓN
+% ============================================================
+\newpage
+\section{Conclusión}
+
+El presente trabajo permitió construir y validar generadores de números pseudoaleatorios
+para las nueve distribuciones de probabilidad indicadas en la Tabla~1 del enunciado,
+empleando como base el Generador Congruencial Lineal (GCL) con parámetros ANSI C
+desarrollado en el trabajo anterior.
+
+\textbf{Métodos de generación.} La \textit{Transformada Inversa} se aplicó a la totalidad
+de las distribuciones: dada su generalidad, es el método fundamental de la simulación.
+El \textit{Método de Rechazo} se implementó únicamente para las distribuciones continuas
+que lo requerían —Uniforme, Exponencial y Normal— y en todos los casos se identificó
+la función envolvente apropiada y se calculó la constante de normalización $c$.
+
+\textbf{Resultados del testeo.} Se ejecutaron tests Chi-cuadrado para las seis distribuciones
+que lo exigía la cátedra, más el test Kolmogorov-Smirnov para las continuas con testeo,
+utilizando $N = 1000$ muestras, $\alpha = 0{,}05$ y tres semillas (1273, 3728, 7198).
+Los 18 ensayos requeridos aprobaron sin excepción. Los únicos rechazos aislados
+observados (Chi-cuadrado, semilla 7198 en Uniforme y Exponencial) corresponden a
+errores de tipo I inherentes al nivel de significancia elegido, fenómeno que el test
+Kolmogorov-Smirnov confirma al aprobar esas mismas muestras.
+
+\textbf{Sobre el generador base.} El GCL demostró ser un generador confiable para
+alimentar todos los algoritmos implementados. Su costo computacional es mínimo (una
+multiplicación y un módulo por valor generado) y sus propiedades estadísticas son
+suficientes para los fines de la simulación de eventos discretos.
+
+\textbf{Relevancia del material de referencia.} Los algoritmos del Capítulo 4 de
+Naylor \cite{naylor1982}, aunque publicados en 1982, siguen siendo matemáticamente
+exactos y pedagógicamente claros. La derivación formal de la Transformada Inversa
+para cada distribución —partiendo de la CDF e igualándola a un uniforme $U$— resulta
+un ejercicio que consolida la comprensión profunda de cada modelo probabilístico.
+
+En síntesis, el trabajo cumple la totalidad de los requisitos de la cátedra: nueve
+distribuciones documentadas teórica y matemáticamente, generadores Python para las
+distribuciones indicadas, tests estadísticos aprobados y gráficas comparativas para
+cada distribución.
+
+% ============================================================
+% REFERENCIAS
+% ============================================================
+\newpage
+\nocite{*}
+\bibliographystyle{unsrt}
+\bibliography{referencias}
+
+\end{document}
