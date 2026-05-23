@@ -90,23 +90,26 @@ optimalidad.
 
 \subsubsection{Código Python}
 
-\begin{verbatim}
+\begin{lstlisting}
 def uniforme_inversa(a, b, n, semilla):
     gcl = GeneradorGCL(semilla=semilla)
+    # Se escala cada valor U en (0,1) al intervalo [a,b] mediante transformacion lineal
     return [a + gcl.siguiente() * (b - a) for _ in range(n)]
 
 
 def uniforme_rechazo(a, b, n, semilla):
     gcl          = GeneradorGCL(semilla=semilla)
-    gcl_criterio = GeneradorGCL(semilla=semilla + 1)
+    gcl_criterio = GeneradorGCL(semilla=semilla + 1)  # segundo generador independiente
     muestras = []
     while len(muestras) < n:
+        # Se genera un candidato uniformemente en [a,b]
         x  = a + gcl.siguiente() * (b - a)
+        # Se evalua el criterio de aceptacion u2 <= f(x)/(c*g(x))
         u2 = gcl_criterio.siguiente()
-        if u2 <= 1.0:
+        if u2 <= 1.0:           # siempre verdadero — incluido para mostrar el mecanismo
             muestras.append(x)
     return muestras
-\end{verbatim}
+\end{lstlisting}
 
 \subsubsection{Testeo estadístico}
 
@@ -481,32 +484,38 @@ La eficiencia es $1/c = \sqrt{\pi/(2e)} \approx 76\%$.
 
 \subsubsection{Código Python}
 
-\begin{verbatim}
+\begin{lstlisting}
 def normal_box_muller(mu, sigma, n, semilla):
     gcl1 = GeneradorGCL(semilla=semilla)
     gcl2 = GeneradorGCL(semilla=semilla + 1)
     muestras = []
     while len(muestras) < n:
         u1, u2 = gcl1.siguiente(), gcl2.siguiente()
+        # Transformacion de coordenadas polares: R^2 = -2ln(u1) y theta = 2*pi*u2
         z1 = math.sqrt(-2*math.log(u1)) * math.cos(2*math.pi*u2)
         z2 = math.sqrt(-2*math.log(u1)) * math.sin(2*math.pi*u2)
+        # Se traslada y escala: X = mu + sigma*Z para obtener N(mu, sigma^2)
         muestras.append(mu + sigma * z1)
         if len(muestras) < n:
             muestras.append(mu + sigma * z2)
     return muestras
 
 def normal_rechazo(mu, sigma, n, semilla):
-    gcl1 = GeneradorGCL(semilla=semilla)
-    gcl2 = GeneradorGCL(semilla=semilla + 1)
-    gcl3 = GeneradorGCL(semilla=semilla + 2)
+    gcl1 = GeneradorGCL(semilla=semilla)      # genera candidatos desde Exp(1)
+    gcl2 = GeneradorGCL(semilla=semilla + 1)  # evalua criterio de aceptacion
+    gcl3 = GeneradorGCL(semilla=semilla + 2)  # asigna aleatoriamente el signo
     muestras = []
     while len(muestras) < n:
+        # Generador de candidatos Y ~ Exp(1) mediante transformada inversa
         y = -math.log(gcl1.siguiente())
+        # Criterio de aceptacion: u2 <= exp(-(y-1)^2/2) = f+(y)/(c*g(y))
         if gcl2.siguiente() <= math.exp(-(y - 1)**2 / 2):
+            # Se asigna aleatoriamente el signo aprovechando la simetria de N(0,1)
             z = y if gcl3.siguiente() < 0.5 else -y
+            # Se escala y traslada: X = mu + sigma*Z
             muestras.append(mu + sigma * z)
     return muestras
-\end{verbatim}
+\end{lstlisting}
 
 \subsubsection{Testeo estadístico}
 

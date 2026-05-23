@@ -13,6 +13,26 @@
 \usepackage{fancyhdr}
 \usepackage{titlesec}
 \usepackage{listings}
+\usepackage{xcolor}
+
+% --- CONFIGURACIÓN DE LISTINGS PARA PYTHON CON COLORES ---
+\lstset{
+    language=Python,
+    basicstyle=\ttfamily\small,
+    keywordstyle=\color[RGB]{0, 102, 153}\bfseries,        % Azul para palabras clave
+    commentstyle=\color[RGB]{102, 102, 102}\itshape,       % Gris para comentarios
+    stringstyle=\color[RGB]{204, 0, 0},                    % Rojo para strings
+    numberstyle=\tiny\color[RGB]{128, 128, 128},
+    breaklines=true,
+    breakatwhitespace=true,
+    frame=single,
+    framesep=10pt,
+    backgroundcolor=\color[RGB]{250, 250, 250},            % Fondo gris claro
+    rulecolor=\color[RGB]{200, 200, 200},
+    showstringspaces=false,
+    tabsize=4,
+    captionpos=b,
+}
 
 % --- HEADER ---
 \pagestyle{fancy}
