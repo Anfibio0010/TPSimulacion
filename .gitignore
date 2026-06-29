@@ -224,3 +224,6 @@ __marimo__/
 
 # Claude Code context (auto-generado, no versionar)
 CLAUDE.md
+
+*/*.png
+*/*.csv
